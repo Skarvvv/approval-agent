@@ -50,7 +50,7 @@ def _baseline_file(mode: str) -> Path:
 
 
 def print_report(report: dict, baseline: Optional[dict] = None) -> None:
-    """在终端打印人能读的报告（README 里的表就从这里抄）。"""
+    """在终端打印人能读的报告（README.md 里的表就从这里抄）。"""
     def pct(x: float) -> str:
         return f"{x * 100:.1f}%"
 
