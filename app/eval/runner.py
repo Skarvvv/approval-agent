@@ -83,7 +83,10 @@ def print_report(report: dict, baseline: Optional[dict] = None) -> None:
                            ("traceability_rate", "依据可追溯率")):
             before, after = old[key]["value"], report[key]["value"]
             print(f"  {label}: {pct(before)} -> {pct(after)}  ({(after - before) * 100:+.1f} pp)")
-        print(f"  平均工具调用轮数: {old['avg_tool_calls']:.2f} -> {report['avg_tool_calls']:.2f}")
+        delta_calls = report["avg_tool_calls"] - old["avg_tool_calls"]
+        print(
+            f"  平均工具调用轮数: {old['avg_tool_calls']:.2f} -> {report['avg_tool_calls']:.2f}  ({delta_calls:+.2f} 次)")
+
     else:
         print("--- 首次运行：本次结果将固化为基线 ---")
     print("--------------------------------")

@@ -18,6 +18,7 @@ from openai import OpenAI
 
 from app.schemas import Application, Action, Verdict
 from app.agent.tools import execute_tool
+from app.agent.prompts import SYSTEM_PROMPT
 from app.rules.engine import evaluate
 from typing import Optional
 
@@ -25,19 +26,6 @@ MAX_STEPS = 5
 LLM_MODEL = "deepseek-chat"
 LLM_BASE_URL = "https://api.deepseek.com"
 LLM_TEMP = 0.0
-
-SYSTEM_PROMPT = """你是一个「变更申请单智能预审」Agent。
-任务：根据一张数据变更申请单，判断风险等级，并给出是否需要人工复核的结论。
-
-可用工具（每轮只能调用其中一个）：
-- search_policy(query: str): 按关键词检索制度/判例，返回带 doc_id 的可追溯命中
-- check_rules(): 跑确定性合规规则，返回命中的风险条款与最高等级
-
-建议工作流：先 check_rules 拿确定性风险，再按需 search_policy 找依据，最后用 finish 给结论。
-每轮你只能输出一个 JSON 对象，二选一：
-1) 调工具：{"thought": "思考", "action": "search_policy" 或 "check_rules", "args": {...}}
-2) 收尾：{"thought": "思考", "action": "finish", "answer": "结论，必须引用工具返回的 doc_id 作为依据"}
-严禁编造 doc_id 或条款；结论里的依据必须来自工具实际返回的 evidence。"""
 
 
 def _call_llm_real(messages: list) -> Action:
