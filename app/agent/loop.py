@@ -26,18 +26,31 @@ MAX_STEPS = 5
 LLM_MODEL = "deepseek-chat"
 LLM_BASE_URL = "https://api.deepseek.com"
 LLM_TEMP = 0.0
+LLM_TIMEOUT = 10.0
 
 
 def _call_llm_real(messages: list) -> Action:
-    """真实模式：调 DeepSeek，解析出 Action；解析失败则安全兜底。"""
-    client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"), base_url=LLM_BASE_URL)
-    resp = client.chat.completions.create(
-        model=LLM_MODEL,
-        messages=messages,
-        temperature=LLM_TEMP,
-        response_format={"type": "json_object"},
-    )
-    raw = resp.choices[0].message.content
+    """真实模式：调 DeepSeek；网络异常 / 解析失败均降级转人工，不冒泡 500。"""
+    try:
+        client = OpenAI(
+            api_key=os.getenv("DEEPSEEK_API_KEY"),
+            base_url=LLM_BASE_URL,
+            timeout=LLM_TIMEOUT,        # 防止网络挂起导致请求永远不返回
+        )
+        resp = client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=messages,
+            temperature=LLM_TEMP,
+            response_format={"type": "json_object"},
+        )
+        raw = resp.choices[0].message.content
+    except Exception as e:
+        # 调用链路异常 → 显式降级；只记异常类型名，不把异常正文写进审计表
+        name = type(e).__name__
+        return Action(thought=f"模型调用失败，降级转人工（{name}）",
+                      action="finish",
+                      answer=f"模型调用失败（{name}），已转人工复核。")
+
     try:
         data = json.loads(raw)       # 一级：JSON 字符串 → 字典
         return Action(**data)        # 二级：字典 → 带类型校验的 Action

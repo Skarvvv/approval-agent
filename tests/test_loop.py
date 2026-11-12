@@ -70,3 +70,25 @@ def test_prompt_is_loaded_from_prompts_module():
     from app.agent.prompts import SYSTEM_PROMPT
     assert loop.SYSTEM_PROMPT is SYSTEM_PROMPT
     assert "search_policy" in SYSTEM_PROMPT and "check_rules" in SYSTEM_PROMPT
+
+
+def test_llm_failure_degrades_to_human_without_crash():
+    """真实模式调用链路异常：不冒泡 500，降级转人工，等级仍由规则引擎定。"""
+    import app.agent.loop as loop
+
+    class BrokenClient:
+        def __init__(self, **kwargs):
+            raise RuntimeError("模拟网络故障")
+
+    original = loop.OpenAI
+    loop.OpenAI = BrokenClient
+    try:
+        trace: list = []
+        v = loop.run_agent(make_app(fields=["user_phone"]), mock=False, trace=trace)
+    finally:
+        loop.OpenAI = original
+
+    assert v.level == "high"                          # 规则引擎照常拍板
+    assert v.need_human_review is True
+    assert trace[0]["action"] == "finish"
+    assert "降级" in trace[0]["result"]["thought"]   # 故障在审计轨迹里可见
