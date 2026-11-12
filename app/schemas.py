@@ -5,9 +5,11 @@ from pydantic import BaseModel, Field
 RiskLevel = Literal["low", "mid", "high"]
 ActionName = Literal["search_policy", "check_rules", "finish"]
 Actor = Literal["agent", "human", "tool"]
+ReviewDecision = Literal["approve", "reject"]
+
 
 class Application(BaseModel):
-    """一张数据导出申请单。"""
+    """一张 数据导出申请单。"""
     applicant: str = Field(..., description="申请人")
     department: str = Field(..., description="申请部门")
     purpose: str = Field(..., description="导出用途")
@@ -37,6 +39,15 @@ class Verdict(BaseModel):
     reasons: List[str] = Field(default_factory=list)
     evidence: List[str] = Field(default_factory=list)
     need_human_review: bool = Field(default=True, description="V1 恒为 True")
+
+
+class ReviewRequest(BaseModel):
+    """人工复核提交（清单 #7 确认门）。"""
+    request_id: str = Field(..., description="要复核的申请单 ID")
+    decision: ReviewDecision = Field(..., description="人工最终决定：approve / reject")
+    reviewer: str = Field(..., description="复核人")
+    final_level: RiskLevel = Field(..., description="人工认定的风险等级")
+    reason: str = Field(default="", description="复核意见；覆盖 Agent 建议时必填")
 
 
 class AuditEvent(BaseModel):
