@@ -52,6 +52,8 @@ flowchart LR
 
 审计落盘为 `logs/audit.jsonl`（每行一个 JSON），可通过 `request_id` 回放任意一次请求。`logs/` 与 `eval_results/` 都是运行产物，不进仓库。
 
+![交互演示](docs/screenshot-docs.png)
+
 ## 评测结果（实测）
 
 30 条人工标注用例，**按 corpus 里的制度条文独立标注**（不是照代码写答案），`gold_reasons` 填对应条款 / 判例 ID。生成命令：
@@ -82,6 +84,7 @@ uv run python -m app.eval.runner
 - 30 条用例只覆盖「常规低风险 / 材料缺失 / 越权敏感 / 边界模糊」四类；方案里的「提示词注入」类留到后续版本。
 - 语料只有 8 条制度 / 判例，规模足够演示，不足以代表生产环境。
 - `Verdict.need_human_review` 是 Agent 建议；系统策略层 V1 一律转人工。
+- 有风险命中的结论必带依据；低风险结论 `evidence` 为空是设计取舍，且未实现「无依据判为无效」的硬校验。
 
 ## 目录结构
 
